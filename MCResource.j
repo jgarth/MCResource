@@ -15,7 +15,7 @@
 @import "CPArray-MCResourceAdditions.j"
 @import "MCValidation.j"
 
-MCResourceServerURL = @"/admin";
+MCResourceServerURLPrefix = @"";
 
 // Options dictionary key names
 MCResourceAssociationClassKey           = @"MCResourceAssociationClassKey";
@@ -1065,7 +1065,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 
 + (CPString)resourceURL
 {
-	return MCResourceServerURL + "/" + [self _constructResourceURL];
+	return MCResourceServerURLPrefix + "/" + [self _constructResourceURL];
 }
 
 - (void)setResourceURL:(CPString)anURL
@@ -1089,7 +1089,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 	}
 	else
 	{
-	    prefix = MCResourceServerURL + "/";
+	    prefix = MCResourceServerURLPrefix + "/";
 	}
 	
 	_resourceURL = prefix + [self _constructResourceURL];
@@ -1348,11 +1348,11 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 {
     if(!_MCResourceErrorAlertIsShowing)
     {
-        var alert = [CPAlert alertWithMessageText:@"Tut uns leid, etwas ist schief gelaufen!"
+        var alert = [CPAlert alertWithMessageText:MCResourceGeneralErrorMessage
                                     defaultButton:@"Okay"
                                   alternateButton:nil
                                       otherButton:nil
-                        informativeTextWithFormat:@"Wir konnten keine Verbindung zum Server herstellen und deine Änderungen wurden möglicherweise nicht gespeichert.\n\nFalls das Problem dauerhaft besteht, wende dich bitte an: support@cornerstoreapp.com"];
+                        informativeTextWithFormat:MCResourceGeneralErrorDetailedMessage];
 
         [alert setDelegate:self];
         [alert beginSheetModalForWindow:[CPApp mainWindow]];

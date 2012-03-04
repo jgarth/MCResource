@@ -1,4 +1,4 @@
-var MCDateTimeRegExp = new RegExp(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})([-+])(\d{2}):(\d{2})/);
+var MCDateTimeRegExp = new RegExp(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(([-+])(\d{2}):(\d{2})|Z)/);
 
 // Inspired by http://delete.me.uk/2005/03/iso8601.html
 var zeropad = function (num) { return ((num < 10) ? '0' : '') + num; }
@@ -12,11 +12,17 @@ var zeropad = function (num) { return ((num < 10) ? '0' : '') + num; }
 	if(!aDateTime || [aDateTime isKindOfClass:[CPNull class]])
 		return nil;
 		
-    var dateParts		= aDateTime.match(MCDateTimeRegExp),	
+    var dateParts		= aDateTime.match(MCDateTimeRegExp),
 		date 			= new Date(dateParts[1], dateParts[2] - 1, dateParts[3], dateParts[4], dateParts[5], dateParts[6]),
-        timeZoneOffset 	= (Number(dateParts[8]) * 60 + Number(dateParts[9])) * (dateParts[7] === '-' ? -1 : 1);
+	    timeZoneOffset;
+
+	if(dateParts[7] != 'Z')
+        timeZoneOffset = (Number(dateParts[9]) * 60 + Number(dateParts[10])) * (dateParts[8] === '-' ? -1 : 1);
+    else
+        timeZoneOffset = -2 * date.getTimezoneOffset();
 
     self = new Date(date.getTime() + (timeZoneOffset + date.getTimezoneOffset()) * 60 * 1000);
+    
     return self;
 }
 

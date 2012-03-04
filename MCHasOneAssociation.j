@@ -33,7 +33,7 @@
     
     if(_shallow)
     {
-        URL = MCResourceServerURL + "/" + [URLBuildingObject _constructResourceURL];
+        URL = MCResourceServerURLPrefix + "/" + [URLBuildingObject _constructResourceURL];
     }
     else
     {

@@ -371,7 +371,7 @@
         
     if(_shallow)
     {
-        URL = MCResourceServerURL + "/" + lastURLPart;
+        URL = MCResourceServerURLPrefix + "/" + lastURLPart;
     }
     else
     {
