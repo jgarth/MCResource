@@ -105,7 +105,7 @@ var MCGlobalQueueObject = nil;
 		_currentRequest = [_queuedRequests objectAtIndex:0];
 
 		// Fire the next queued request
-        CPLog.debug("Starting request: " + _currentRequest);
+        // CPLog.debug("Starting request: " + _currentRequest);
 		[_currentRequest start];
 		
 		// And get it off the heap, archive it

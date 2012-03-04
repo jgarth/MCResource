@@ -50,7 +50,7 @@
         while (key = [keys nextObject])
             _HTTPRequest.setRequestHeader(key, [fields objectForKey:key]);
 
-		if([_request respondsToSelector:@selector(formData)])
+		if([_request respondsToSelector:@selector(formData)] && [_request formData])
 		{
         	_HTTPRequest.send([_request formData]);			
 		}
