@@ -39,12 +39,7 @@
 
 - (_CPObservableArray)associatedObjects
 {
-    if(!_observableAssociatedObjectArray)
-    {
-        [self loadAssociatedObjectsIfNeccessary];
-        return nil;
-    }
-
+    [self loadAssociatedObjectsIfNeccessary];
     return _observableAssociatedObjectArray;
 }
 
@@ -64,7 +59,6 @@
 }
 
 // By adding an object to this association, the following things happen:
-// - nope
 // - reflection is set
 - (void)addAssociatedObjectInBatch:(id)anObject
 {
@@ -141,8 +135,6 @@
 
 - (void)loadAssociatedObjects
 {
-    CPLog.trace("MCHasManyAssociation.loadAssociatedObjects");
-
     if(_nestedOnly)
         return;
 
@@ -395,8 +387,6 @@
 
 - (void)didLoadAssociatedObjects:(CPArray)associatedObjects
 {
-    CPLog.trace("MCHasManyAssociation.didLoadAssociatedObjects");
-
     _didLoadAssociatedObjects = YES;
     _isLoadingAssociatedObjects = NO;
 
