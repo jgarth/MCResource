@@ -120,11 +120,6 @@
     }
 }
 
-- (int)count
-{
-    return [_associatedObjects count];
-}
-
 - (void)loadAssociatedObjectsWithDelegate:(id)aDelegate andSelector:(SEL)aSelector
 {
     _loadDelegate = aDelegate;
@@ -432,11 +427,15 @@
 #pragma mark -
 #pragma mark Method proxying
 
-// Let's forward some methods directly to our array.
+// We forward all array methods like "-objectsAtIndexes:", "-count", etc. to our 
+// observable array, so that straight-forward bindings are possible, like:
+//
+// [someController bind:@"content" toObject:aResource withKeyPath:@"associationName" options:nil]
+//
 - (id)forwardingTargetForSelector:(SEL)aSelector
 {
-    if(aSelector === @selector(firstObject))
-        return _associatedObjects;
+    if(![self respondsToSelector:aSelector] && [_observableAssociatedObjectArray respondsToSelector:aSelector])
+        return _observableAssociatedObjectArray;        
 
     return nil;
 }
