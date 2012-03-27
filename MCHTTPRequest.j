@@ -55,6 +55,7 @@ var MCHTTPRequestCachedDefaultTransformer = [MCJSONDataTransformer new];
 	// Public variables
 	CPURL		URL							@accessors;
 	CPString	HTTPMethod					@accessors;
+	CPString    HTTPBody                    @accessors;
 	CPString	authorizationCredentials	@accessors;
 	id			dataTransformer				@accessors;
 	MCError		error						@accessors(readonly);
@@ -184,6 +185,13 @@ var MCHTTPRequestCachedDefaultTransformer = [MCJSONDataTransformer new];
 	return _formData;
 }
 
+// Set the request's HTTP body directly, set formData to nil
+- (void)setRawData:(CPString)rawData
+{
+    HTTPBody = rawData;
+    _formData = nil;
+}
+
 // Returns the dictionary containing all set HTTP headers and their values
 - (JSObject)allHTTPHeaderFields
 {
@@ -206,6 +214,12 @@ var MCHTTPRequestCachedDefaultTransformer = [MCJSONDataTransformer new];
 	}
 	
 	HTTPMethod = aMethod;
+}
+
+// Set any HTTP header directly
+- (void)setValue:(id)aValue forHTTPHeader:(CPString)aHeader
+{
+    [_HTTPHeaderFields setValue:aValue forKey:aHeader];
 }
 
 // Return the internal connection's status

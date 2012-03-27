@@ -140,6 +140,11 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
     [self addAssociationWithName:aName class:MCBelongsToAssociation options:[CPDictionary dictionary]];
 }
 
++ (void)belongsTo:(CPString)aName options:(CPDictionary)options
+{
+    [self addAssociationWithName:aName class:MCBelongsToAssociation options:options];
+}
+
 + (void)addAssociationWithName:(CPString)aName class:(Class)associationClass options:(CPDictionary)options
 {
     var associatedObjectClass, autosave, shallow, isNestedOnly, sortDescriptors;
@@ -632,7 +637,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 		// CPLog.warn(@"Resource " + self + " loaded without identifier key! This will likely cause problems in the future.");
 	}
 
-	// And normal treatment for the other resources
+	// And normal treatment for the other keys
 	var	attributeEnumerator = [givenAttributes keyEnumerator],
 		attribute;
 
@@ -647,6 +652,9 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 		{
 			switch(attributeType)
 			{
+			    case "CPArray":
+                    [self _setValue:aValue forKey:attributeName];
+			        break;
 				case "CPString":
 					// Set null values as null values, not string representations of CPNull
 					if(!([aValue isKindOfClass:[CPNull class]] || (typeof aValue == 'String' && aValue.length == 0)))
@@ -694,6 +702,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
                                 var childObj = [childClass new];
                                 [childObj setAttributes:[CPDictionary dictionaryWithObject:childObjectData forKey:[[childClass className] railsifiedString]]];
                                 [theHasManyAssociation addAssociatedObject:childObj];
+                                [childObj resourceDidLoad];
                             }
 					    }
 					    else
@@ -705,7 +714,9 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 							[self willChangeValueForKey:attributeName];
 							[[_associations objectForKey:attributeName] setAssociatedObject:childObj];
 							[self didChangeValueForKey:attributeName];
+                            [childObj resourceDidLoad];
 					    }
+
 					}
 					else if((childClass = objj_getClass(attributeType)) || (childClass = objj_getClass([attributeName cappifiedClass])))
 					{
@@ -1355,7 +1366,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
                         informativeTextWithFormat:MCResourceGeneralErrorDetailedMessage];
 
         [alert setDelegate:self];
-        [alert beginSheetModalForWindow:[CPApp mainWindow]];
+        [alert runModal];
 
         _MCResourceErrorAlertIsShowing = YES;            
     }

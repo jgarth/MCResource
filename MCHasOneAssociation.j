@@ -110,8 +110,9 @@
 
 		    if(!parentalAssociationId && !_associatedObject && ![_associatedObjectClass isSingletonResource])
 		    {
+		        // This happens when an associated object is no longer present
 		        // Cannot load hasOne association with no object, no singleton and no parental association id.
-		        CPLog.error(@"%@: Cannot load non-singleton hasOne association with no object, and no parental association id.", self);
+//		        CPLog.error(@"%@: Cannot load non-singleton hasOne association with no object, and no parental association id.", self);
 		        return;   
 		    }
         }
