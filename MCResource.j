@@ -332,7 +332,12 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 	
 	while(attribute = [attributes nextObject])
 	{
-		description += "\t " + attribute + " = '" + [self valueForKey:attribute] + "'\n";
+	    if([_associations containsKey:attribute])
+	        attributeDescription = [self associationForName:attribute];
+	    else
+	        attributeDescription = [self valueForKey:attribute];
+	        
+		description += [CPString stringWithFormat:@"\t %@ = '%@'\n", attribute, attributeDescription];
 	}
 	
 	description += "};";
@@ -695,15 +700,18 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
                             // Parse the array
                             var theHasManyAssociation = [_associations objectForKey:attributeName],
                                 childObjectDataEnumerator = [aValue objectEnumerator],
-                                childObjectData;
+                                childObjectData,
+                                initializedChildObjects = [];
                             
                             while(childObjectData = [childObjectDataEnumerator nextObject])
                             {
                                 var childObj = [childClass new];
                                 [childObj setAttributes:[CPDictionary dictionaryWithObject:childObjectData forKey:[[childClass className] railsifiedString]]];
-                                [theHasManyAssociation addAssociatedObject:childObj];
                                 [childObj resourceDidLoad];
+                                [initializedChildObjects addObject:childObj];
                             }
+                            
+                            [theHasManyAssociation didLoadAssociatedObjects:initializedChildObjects]
 					    }
 					    else
 					    {

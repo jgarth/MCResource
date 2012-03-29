@@ -29,6 +29,11 @@
     return self;
 }
 
+- (CPString)description
+{
+	return [CPString stringWithFormat:@"<%@ 0x%@: \"%@\" on %@ (%d objects)>", class_getName(isa), [CPString stringWithHash:[self UID]], _associationName, [_parent className], [self count]];
+}
+
 #pragma mark -
 #pragma mark Content and Array methods
 
@@ -380,6 +385,8 @@
     [_parent didChangeValueForKey:_associationName];
 }
 
+// Will be called when associated objects were loaded either via -loadAssociatedObjects or
+// via MCResource-setAttributes: method in case of nested objects
 - (void)didLoadAssociatedObjects:(CPArray)associatedObjects
 {
     _didLoadAssociatedObjects = YES;
@@ -421,7 +428,7 @@
 
 - (void)requestDidFail:(MCQueuedRequest)aRequest
 {
-    CPLog.error(self + @"Request did fail: " + aRequest);
+    CPLog.error(@"%@ – request did fail: %@", self, aRequest);
 }
 
 #pragma mark -
