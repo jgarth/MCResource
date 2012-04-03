@@ -8,8 +8,9 @@
 	id      _loadDelegate;
 	SEL     _loadSelector;
 	int     _unsavedAssociationCount;
-	CPArray sortDescriptors @accessors;
+	CPArray _sortDescriptors @accessors(setter=setSortDescriptors:);
 	CPArray _objectsToDelete;
+	CPURL   _customURL @accessors(setter=setCustomURL:);
 
 	_CPObservableArray _observableAssociatedObjectArray;
 }
@@ -60,6 +61,12 @@
         [self addAssociatedObjectInBatch:object];
     }
 
+    // Re-sort if applicable
+    if(_sortDescriptors.length > 0)
+    {
+        [_observableAssociatedObjectArray sortUsingDescriptors:_sortDescriptors];
+    }
+
     [_parent didChangeValueForKey:_associationName];
 }
 
@@ -88,7 +95,10 @@
     [self addAssociatedObjectInBatch:anObject];
 
     // Re-sort if applicable
-    [_observableAssociatedObjectArray sortUsingDescriptors:sortDescriptors];
+    if(_sortDescriptors.length > 0)
+    {
+        [_observableAssociatedObjectArray sortUsingDescriptors:_sortDescriptors];
+    }
 
     [_parent didChangeValueForKey:_associationName];
 }
@@ -260,9 +270,15 @@
 
 - (MCQueuedRequest)_buildLoadRequest
 {
-    var target = [CPURL URLWithString:[_parent resourceURL] + '/' + [_associatedObjectClass _constructResourceURL]],
-	    request = [MCHTTPRequest requestTarget:target withMethod:@"GET" andDelegate:self],
+    var target = _customURL;
+    
+    if(!target)
+        target = [CPURL URLWithString:[_parent resourceURL] + '/' + [_associatedObjectClass _constructResourceURL]];
+    
+    var request = [MCHTTPRequest requestTarget:target withMethod:@"GET" andDelegate:self],
 	    queuedRequest = [MCQueuedRequest queuedRequestWithRequest:request];
+
+        
 
     _isLoadingAssociatedObjects = YES;
 
