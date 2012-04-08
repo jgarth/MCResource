@@ -700,7 +700,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
                             while(childObjectData = [childObjectDataEnumerator nextObject])
                             {
                                 var childObj = [childClass new];
-                                [childObj setAttributes:[CPDictionary dictionaryWithObject:childObjectData forKey:[[childClass className] railsifiedString]]];
+                                [childObj setAttributes:childObjectData];
                                 [theHasManyAssociation addAssociatedObject:childObj];
                                 [childObj resourceDidLoad];
                             }
