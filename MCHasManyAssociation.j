@@ -8,9 +8,10 @@
 	id      _loadDelegate;
 	SEL     _loadSelector;
 	int     _unsavedAssociationCount;
-	CPArray sortDescriptors @accessors;
+	CPArray _sortDescriptors @accessors(setter=setSortDescriptors:);
 	CPArray _objectsToDelete;
-	
+	CPURL   _customURL @accessors(setter=setCustomURL:);
+
 	_CPObservableArray _observableAssociatedObjectArray;
 }
 
@@ -25,8 +26,13 @@
         _didLoadAssociatedObjects = NO;
         _isLoadingAssociatedObjects = NO;
     }
-    
+
     return self;
+}
+
+- (CPString)description
+{
+	return [CPString stringWithFormat:@"<%@ 0x%@: \"%@\" on %@ (%d objects)>", class_getName(isa), [CPString stringWithHash:[self UID]], _associationName, [_parent className], [self count]];
 }
 
 #pragma mark -
@@ -39,12 +45,7 @@
 
 - (_CPObservableArray)associatedObjects
 {
-    if(!_observableAssociatedObjectArray)
-    {
-        [self loadAssociatedObjectsIfNeccessary];
-        return nil;
-    }
-    
+    [self loadAssociatedObjectsIfNeccessary];
     return _observableAssociatedObjectArray;
 }
 
@@ -52,19 +53,24 @@
 {
     var objectEnumerator = [theObjects objectEnumerator],
         object;
-        
-    [_parent willChangeValueForKey:_associationName];        
-        
+
+    [_parent willChangeValueForKey:_associationName];
+
     while(object = [objectEnumerator nextObject])
     {
         [self addAssociatedObjectInBatch:object];
     }
-    
+
+    // Re-sort if applicable
+    if(_sortDescriptors.length > 0)
+    {
+        [_observableAssociatedObjectArray sortUsingDescriptors:_sortDescriptors];
+    }
+
     [_parent didChangeValueForKey:_associationName];
 }
 
 // By adding an object to this association, the following things happen:
-// - nope
 // - reflection is set
 - (void)addAssociatedObjectInBatch:(id)anObject
 {
@@ -72,7 +78,7 @@
 
     // Clear Resource's URL, will be rebuilt
     [anObject setResourceURL:nil];
-    
+
     var countBeforeInsertion = [_associatedObjects count];
     [_associatedObjects addObject:anObject];
 
@@ -85,12 +91,15 @@
 - (void)addAssociatedObject:(id)anObject
 {
     [_parent willChangeValueForKey:_associationName];
-    
+
     [self addAssociatedObjectInBatch:anObject];
-    
+
     // Re-sort if applicable
-    [_observableAssociatedObjectArray sortUsingDescriptors:sortDescriptors];
-    
+    if(_sortDescriptors.length > 0)
+    {
+        [_observableAssociatedObjectArray sortUsingDescriptors:_sortDescriptors];
+    }
+
     [_parent didChangeValueForKey:_associationName];
 }
 
@@ -126,11 +135,6 @@
     }
 }
 
-- (int)count
-{
-    return [_associatedObjects count];
-}
-
 - (void)loadAssociatedObjectsWithDelegate:(id)aDelegate andSelector:(SEL)aSelector
 {
     _loadDelegate = aDelegate;
@@ -143,18 +147,18 @@
 {
     if(_nestedOnly)
         return;
-    
+
     var loadRequest = [self _buildLoadRequest];
     _isLoadingAssociatedObjects = YES;
     [[MCQueue sharedQueue] appendRequest:loadRequest];
 }
 
 - (void)loadAssociatedObjectsIfNeccessary
-{   
+{
     // Cannot load associations on unsaved objects
     if(![_parent identifier])
         return;
-        
+
     if([_associatedObjects count] == 0 && !_didLoadAssociatedObjects && !_isLoadingAssociatedObjects)
     {
         [self loadAssociatedObjects];
@@ -177,7 +181,7 @@
 - (id)build
 {
     var newObject = [_associatedObjectClass new];
-    
+
     return newObject;
 }
 
@@ -189,12 +193,12 @@
 - (CPArray)saveWithDelegate:(id)aDelegate andSelector:(SEL)aSelector startImmediately:(BOOL)startImmediately
 {
     var saveRequests = [self _buildSaveRequests];
-     
+
     _saveDelegate = aDelegate;
-    _saveSelector = aSelector;     
-        
+    _saveSelector = aSelector;
+
     if([saveRequests count] > 0 && startImmediately)
-    {   
+    {
         var associationSaveQueue = [MCQueue new];
         [associationSaveQueue appendRequests:saveRequests];
         [associationSaveQueue start];
@@ -223,7 +227,7 @@
         }
         else
         {
-            [anObject deleteWithDelegate:self andSelector:@selector(didDeleteAssociatedObject:)];            
+            [anObject deleteWithDelegate:self andSelector:@selector(didDeleteAssociatedObject:)];
         }
     }
     else
@@ -242,19 +246,19 @@
         if([associatedObject hasErrors])
             return YES;
     }
-    
+
     return NO;
 }
 
 - (CPString)humanReadableErrors
 {
     var allAssociatedObjectErrors = [_associatedObjects valueForKeyPath:@"humanReadableErrors"];
-    
+
     if([allAssociatedObjectErrors isKindOfClass:[CPSet class]])
     {
         allAssociatedObjectErrors = [allAssociatedObjectErrors allObjects];
     }
-    
+
     if(allAssociatedObjectErrors && ([allAssociatedObjectErrors isKindOfClass:[CPArray class]]))
         return allAssociatedObjectErrors.join("\n");
     else
@@ -265,10 +269,16 @@
 #pragma mark Helpers
 
 - (MCQueuedRequest)_buildLoadRequest
-{    
-    var target = [CPURL URLWithString:[_parent resourceURL] + '/' + [_associatedObjectClass _constructResourceURL]],
-	    request = [MCHTTPRequest requestTarget:target withMethod:@"GET" andDelegate:self],
+{
+    var target = _customURL;
+    
+    if(!target)
+        target = [CPURL URLWithString:[_parent resourceURL] + '/' + [_associatedObjectClass _constructResourceURL]];
+    
+    var request = [MCHTTPRequest requestTarget:target withMethod:@"GET" andDelegate:self],
 	    queuedRequest = [MCQueuedRequest queuedRequestWithRequest:request];
+
+        
 
     _isLoadingAssociatedObjects = YES;
 
@@ -279,7 +289,7 @@
 {
     var _unsavedAssociationCount = 0,
         saveRequests = [];
-    
+
     // Add delete requests first
     var deletedObjectEnumerator = [_objectsToDelete objectEnumerator],
         deletedObject;
@@ -289,36 +299,36 @@
         if(![deletedObject isNewRecord])
         {
             [saveRequests addObject:[deletedObject deleteWithDelegate:self andSelector:@selector(associatedObjectDidSave:) startImmediately:NO]];
-            _unsavedAssociationCount++;            
+            _unsavedAssociationCount++;
         }
     }
 
     [_objectsToDelete removeAllObjects];
-    
+
     var associatedObjectEnumerator = [_associatedObjects objectEnumerator],
         associatedObject;
-    
+
     var uniqueAttributes = [_associatedObjectClass uniqueAttributes];
 
     var requeuedSaveRequests = [];
-    
+
     while(associatedObject = [associatedObjectEnumerator nextObject])
     {
         [associatedObject commit];
-        
+
         var attributesForSave = [associatedObject attributesForSave];
-        
+
         if(attributesForSave || [associatedObject isNewRecord])
         {
             // Check for unique attributes
             var uniqueAttributesToSave = [[[associatedObject changes] allKeys] objectsCommonWithArray:uniqueAttributes];
-            
+
             if(uniqueAttributesToSave && ![associatedObject isNewRecord])
             {
                 var uniqueAttributesToSaveCount = [uniqueAttributesToSave count];
 
-                var associatedObjectClone = [associatedObject clone];                
-            
+                var associatedObjectClone = [associatedObject clone];
+
                 // Replace them with a temporary value before issuing the first save request
                 while(uniqueAttributesToSaveCount--)
                 {
@@ -333,13 +343,13 @@
             else
             {
                 var saveRequest = [associatedObject saveWithDelegate:self andSelector:@selector(associatedObjectDidSave:) startImmediately:NO];
-                [saveRequests addObject:saveRequest];   
+                [saveRequests addObject:saveRequest];
             }
-            
+
             _unsavedAssociationCount++;
         }
     }
-    
+
     // Add any out-of-queue requests now (such as saving unique values that were replaced by temps earlier) as child requests of the last request in the "replaced" save queue
     [[saveRequests lastObject] addChildRequests:requeuedSaveRequests];
 
@@ -365,10 +375,10 @@
 
 - (CPURL)_buildAssociationURLWithObject:(id)anObject
 {
-    var URL, 
+    var URL,
         URLBuildingObject = (anObject ? anObject : _associatedObjectClass),
         lastURLPart = [URLBuildingObject _constructResourceURL];
-        
+
     if(_shallow)
     {
         URL = MCResourceServerURLPrefix + "/" + lastURLPart;
@@ -377,7 +387,7 @@
     {
         URL = [_parent resourceURL] + '/' + lastURLPart;
     }
-    
+
     return [CPURL URLWithString:URL];
 }
 
@@ -391,6 +401,8 @@
     [_parent didChangeValueForKey:_associationName];
 }
 
+// Will be called when associated objects were loaded either via -loadAssociatedObjects or
+// via MCResource-setAttributes: method in case of nested objects
 - (void)didLoadAssociatedObjects:(CPArray)associatedObjects
 {
     _didLoadAssociatedObjects = YES;
@@ -399,27 +411,18 @@
     [_parent willChangeValueForKey:_associationName];
 
     // Remove all objects (except unsaved ones)
-    var count = [_associatedObjects count];
-
-    while(count--)
-    {
-        var associatedObject = [_associatedObjects objectAtIndex:count];
-        
+    [_associatedObjects enumerateObjectsUsingBlock:function(associatedObject) {
         if(![associatedObject isNewRecord])
         {
             [_associatedObjects removeObject:associatedObject];
+            [_observableAssociatedObjectArray removeObject:associatedObject];
         }
+    }];
 
-        if(![[_observableAssociatedObjectArray objectAtIndex:count] isNewRecord])
-        {
-            [_observableAssociatedObjectArray removeObjectAtIndex:count];
-        }
-    }
-            
     [self addAssociatedObjects:associatedObjects];
 
     [_parent didChangeValueForKey:_associationName];
-    
+
     if(_loadDelegate && _loadSelector)
     {
         [_loadDelegate performSelector:_loadSelector withObject:associatedObjects];
@@ -441,18 +444,22 @@
 
 - (void)requestDidFail:(MCQueuedRequest)aRequest
 {
-    CPLog.error(self + @"Request did fail: " + aRequest);
+    CPLog.error(@"%@ – request did fail: %@", self, aRequest);
 }
 
 #pragma mark -
 #pragma mark Method proxying
 
-// Let's forward some methods directly to our array.
+// We forward all array methods like "-objectsAtIndexes:", "-count", etc. to our 
+// observable array, so that straight-forward bindings are possible, like:
+//
+// [someController bind:@"content" toObject:aResource withKeyPath:@"associationName" options:nil]
+//
 - (id)forwardingTargetForSelector:(SEL)aSelector
 {
-    if(aSelector === @selector(firstObject))
-        return _associatedObjects;
-        
+    if(![self respondsToSelector:aSelector] && [_observableAssociatedObjectArray respondsToSelector:aSelector])
+        return _observableAssociatedObjectArray;        
+
     return nil;
 }
 

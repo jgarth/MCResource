@@ -25,7 +25,7 @@
 
 - (CPString)description
 {
-	return "<" + class_getName(isa) + " 0x" + [CPString stringWithHash:[self UID]] + ": " + _associationName + " on " + [_parent className] + ">";
+	return [CPString stringWithFormat:@"<%@ 0x%@: \"%@\" on %@>", class_getName(isa), [CPString stringWithHash:[self UID]], _associationName, [_parent className]];
 }
 
 @end

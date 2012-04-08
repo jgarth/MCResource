@@ -16,7 +16,7 @@ var MCGlobalQueueObject = nil;
 	{
 		MCGlobalQueueObject = [[MCQueue alloc] init];
 	}
-	
+
 	return MCGlobalQueueObject;
 }
 
@@ -27,7 +27,7 @@ var MCGlobalQueueObject = nil;
 		_queuedRequests = [];
 		_processedRequests = [];
 	}
-	
+
 	return self;
 }
 
@@ -42,7 +42,7 @@ var MCGlobalQueueObject = nil;
 
 	// Attach it
 	[_queuedRequests addObject:request];
-	
+
 	// If the queue was not stopped, process it immediately
 	if(_isRunning)
 	{
@@ -58,7 +58,7 @@ var MCGlobalQueueObject = nil;
 
 	// Attach it
 	[_queuedRequests addObjectsFromArray:requests];
-	
+
 	// If the queue was not stopped, process it immediately
 	if(_isRunning)
 	{
@@ -104,13 +104,14 @@ var MCGlobalQueueObject = nil;
 	{
 		_currentRequest = [_queuedRequests objectAtIndex:0];
 
+		// And get it off the heap, archive it
+		// Do this now because in case of synchronous callback we could end up here again
+		[_queuedRequests removeObject:_currentRequest];
+		[_processedRequests addObject:_currentRequest];
+
 		// Fire the next queued request
         // CPLog.debug("Starting request: " + _currentRequest);
 		[_currentRequest start];
-		
-		// And get it off the heap, archive it
-		[_queuedRequests removeObject:_currentRequest];
-		[_processedRequests addObject:_currentRequest];
 	}
 }
 

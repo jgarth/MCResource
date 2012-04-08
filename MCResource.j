@@ -24,6 +24,7 @@ MCResourceAssociationAutosaveKey        = @"MCResourceAssociationAutosaveKey";
 MCResourceAssociationShallowKey         = @"MCResourceAssociationShallowKey";
 MCResourceAssociationNestedOnlyKey      = @"MCResourceAssociationNestedOnlyKey";
 MCResourceAssociationSortDescriptorsKey = @"MCResourceAssociationSortDescriptorsKey";
+MCResourceAssociationCustomURLKey       = @"MCResourceAssociationCustomURLKey";
 
 // These are all file-scoped
 var classAttributesDictionary = [CPDictionary dictionary];
@@ -182,6 +183,8 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
         isNestedOnly = NO;
     }
         
+    customURL = [options objectForKey:MCResourceAssociationCustomURLKey];
+        
 	// Add the association to the class ivars
 	// Just as if you had typed "MCHas(One|Many)Association <name>" in the class declaration
 	class_addIvar(self, aName, [associationClass className]);
@@ -197,13 +200,15 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 	                                                             autosave, 
 	                                                             shallow, 
 	                                                             isNestedOnly, 
-	                                                             sortDescriptors]
+	                                                             sortDescriptors,
+	                                                             customURL]
 	                                                    forKeys:[MCResourceAssociationClassKey, 
 	                                                             MCResourceAssociationObjectClassKey,
 	                                                             MCResourceAssociationAutosaveKey, 
 	                                                             MCResourceAssociationShallowKey, 
 	                                                             MCResourceAssociationNestedOnlyKey, 
-	                                                             MCResourceAssociationSortDescriptorsKey]];
+	                                                             MCResourceAssociationSortDescriptorsKey,
+	                                                             MCResourceAssociationCustomURLKey]];
 	
 	[[classAssociationsDictionary objectForKey:[self className]] setObject:optionsDictionary forKey:aName];
 }
@@ -286,10 +291,16 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 			var shallow = [associationOptions objectForKey:MCResourceAssociationShallowKey];
 			var nestedOnly = [associationOptions objectForKey:MCResourceAssociationNestedOnlyKey];
 			var sortDescriptors = [associationOptions objectForKey:MCResourceAssociationSortDescriptorsKey];
+            var customURL = [associationOptions objectForKey:MCResourceAssociationCustomURLKey];
 
             [association setAutosaves:autosaves];
             [association setIsShallow:shallow];
             [association setNestedOnly:nestedOnly];
+            
+            if(customURL)
+            {
+                [association setCustomURL:customURL];
+            }
 
             if(associationTypeClass == MCHasManyAssociation && [sortDescriptors count] > 0)
             {
@@ -332,7 +343,12 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 	
 	while(attribute = [attributes nextObject])
 	{
-		description += "\t " + attribute + " = '" + [self valueForKey:attribute] + "'\n";
+	    if([_associations containsKey:attribute])
+	        attributeDescription = [self associationForName:attribute];
+	    else
+	        attributeDescription = [self valueForKey:attribute];
+	        
+		description += [CPString stringWithFormat:@"\t %@ = '%@'\n", attribute, attributeDescription];
 	}
 	
 	description += "};";
@@ -695,15 +711,18 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
                             // Parse the array
                             var theHasManyAssociation = [_associations objectForKey:attributeName],
                                 childObjectDataEnumerator = [aValue objectEnumerator],
-                                childObjectData;
+                                childObjectData,
+                                initializedChildObjects = [];
                             
                             while(childObjectData = [childObjectDataEnumerator nextObject])
                             {
                                 var childObj = [childClass new];
                                 [childObj setAttributes:childObjectData];
-                                [theHasManyAssociation addAssociatedObject:childObj];
                                 [childObj resourceDidLoad];
+                                [initializedChildObjects addObject:childObj];
                             }
+                            
+                            [theHasManyAssociation didLoadAssociatedObjects:initializedChildObjects];
 					    }
 					    else
 					    {
@@ -754,7 +773,6 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 						}
 						else
 						{
-						    console.log("Class: " + aValue + " " + [aValue className]);
 							CPLog.warn(@"Don't know how to parse objects of class " + [attributeName cappifiedClass] + ". Only dictionary parsing into custom objects is supported.");
 						}
 					}
