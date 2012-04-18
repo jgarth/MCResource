@@ -145,7 +145,7 @@
 
 - (void)loadAssociatedObjects
 {
-    if(_nestedOnly)
+    if(_nestedOnly || _isLoadingAssociatedObjects)
         return;
 
     var loadRequest = [self _buildLoadRequest];
@@ -277,8 +277,6 @@
     
     var request = [MCHTTPRequest requestTarget:target withMethod:@"GET" andDelegate:self],
 	    queuedRequest = [MCQueuedRequest queuedRequestWithRequest:request];
-
-        
 
     _isLoadingAssociatedObjects = YES;
 
@@ -426,6 +424,8 @@
     if(_loadDelegate && _loadSelector)
     {
         [_loadDelegate performSelector:_loadSelector withObject:associatedObjects];
+        _loadDelegate = nil;
+        _loadSelector = nil;
     }
 }
 
