@@ -250,13 +250,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
     }
 
     // Set attribute changes
-    var attributes = [[[self class] attributes] allKeys],
-        attributeCount = [attributes count];
-        
-    while(attributeCount--)
-    {
-        [[clone changes] setValue:@"" forKey:[attributes objectAtIndex:attributeCount]];
-    }
+    [clone setValue:[_changes copy] forKey:@"_changes"];
 
     [clone commit];
     
