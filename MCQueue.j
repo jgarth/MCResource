@@ -110,7 +110,7 @@ var MCGlobalQueueObject = nil;
 		[_processedRequests addObject:_currentRequest];
 
 		// Fire the next queued request
-        // CPLog.debug("Starting request: " + _currentRequest);
+        CPLog.debug("Starting request: " + _currentRequest);
 		[_currentRequest start];
 	}
 }

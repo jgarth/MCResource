@@ -319,7 +319,7 @@
         if(attributesForSave || [associatedObject isNewRecord])
         {
             // Check for unique attributes
-            var uniqueAttributesToSave = [[[associatedObject changes] allKeys] objectsCommonWithArray:uniqueAttributes];
+            var uniqueAttributesToSave = [[[associatedObject changesForRemote] allKeys] objectsCommonWithArray:uniqueAttributes];
 
             if(uniqueAttributesToSave && ![associatedObject isNewRecord])
             {
@@ -337,11 +337,13 @@
                 // Add the save request containing temporary values to the save queue
                 [saveRequests addObject:[associatedObjectClone saveWithDelegate:nil andSelector:nil startImmediately:NO]];
                 [requeuedSaveRequests addObject:[associatedObject saveWithDelegate:self andSelector:@selector(associatedObjectDidSave:) startImmediately:NO]];
+                CPLog.debug(@"Saving %@, requeued %@, unsaved count: %d", [saveRequests lastObject], [requeuedSaveRequests lastObject], _unsavedAssociationCount + 1);
             }
             else
             {
                 var saveRequest = [associatedObject saveWithDelegate:self andSelector:@selector(associatedObjectDidSave:) startImmediately:NO];
                 [saveRequests addObject:saveRequest];
+                CPLog.debug(@"Saving %@, unsaved count: %d", saveRequest, _unsavedAssociationCount + 1);
             }
 
             _unsavedAssociationCount++;
@@ -431,6 +433,8 @@
 
 - (void)associatedObjectDidSave:(id)object
 {
+    CPLog.debug(@"associatedObjectDidSave: %@. Remaining: %d", object, _unsavedAssociationCount);
+    
     if((--_unsavedAssociationCount) === 0)
     {
         [_saveDelegate performSelector:_saveSelector withObject:self];

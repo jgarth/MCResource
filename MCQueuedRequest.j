@@ -85,6 +85,8 @@
     }
     else
     {
+        CPLog.debug(@"NOT notifying original delegate: %@", originalDelegate);
+        
         // Otherwise, insert the child requests into the queue and register as an observer
         // to be notified upon their completion
      	var childRequest,
@@ -100,12 +102,14 @@
 
 - (void)childRequestDidFinish:(CPNotification)aNotification
 {
+    CPLog.debug(@"child request did finish, remaining count: %d remaining count: %d", [childRequests count], [finishedChildRequests count]);
     // Note that this child request did finish
     [finishedChildRequests addObject:[aNotification object]];
 
     // Check whether all child requests have finished
     if([childRequests count] == [finishedChildRequests count])
     {
+        CPLog.debug(@"notifiying original delegate: %@", originalDelegate);
         // and notify the original delegate
         [originalDelegate requestDidFinish:self];
     }
