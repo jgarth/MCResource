@@ -358,7 +358,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
     return [_associations objectForKey:aName];
 }
 
-+ (MCResource)getResourceWithId:(int)anIdentifier ofClass:(Class)resourceClass
++ (MCResource)resourceWithId:(int)anIdentifier ofClass:(Class)resourceClass
 {
     return [AllResourcesByTypeAndId valueForKeyPath:resourceClass + "." + anIdentifier];
 }

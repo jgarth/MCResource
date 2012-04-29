@@ -23,7 +23,7 @@
     if(!parentalAssociationId)
         return nil;
     
-    _associatedObject = [MCResource getResourceWithId:parentalAssociationId ofClass:_associatedObjectClass];
+    _associatedObject = [MCResource resourceWithId:parentalAssociationId ofClass:_associatedObjectClass];
     
     return _associatedObject;
 }
