@@ -216,23 +216,40 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 #pragma mark -
 #pragma mark Overrides
 
+// Copy and clone both "copy" an object, however 
+// -clone will do a deep copy without changing the object's internal state
+// e.g. the _changes dictionary will be untouched, and createdAt will probably be set
+//
+// -copy will create a new resource with the exact same attributes as via -attributes and
+// set them in a manner that the change dictionary is updated, so you could copy & save an object
+
 - (id)copy
 {
     var copy = [[[self class] alloc] init];
-    [copy setAttributes:[self attributes]];
     
+    var myAttributes = [[self attributes] valueForKey:[[self className] railsifiedString]],
+        attributeKeyEnumerator = [myAttributes keyEnumerator],
+        attributeKey;
+    
+    // Add changes to _changes dictionary
+    while(attributeKey = [attributeKeyEnumerator nextObject])
+    {
+        [copy setValue:[myAttributes objectForKey:[attributeKey cappifiedString]] forKey:[attributeKey cappifiedString]];
+    }
+
     // Strip identifier from the copy
     [copy _setValue:nil forKey:@"identifier"];
+    
+    // And commit changes
+    [copy commit];
     
     return copy;
 }
 
 - (id)clone
 {
-    // FIXME: Copy attributes by copying ivars one by one
     var aClass = [self class];
     var clone = [[aClass alloc] init];
-    var attributeNames = [[[clone class] attributes] allKeys];
         
     while([aClass superclass])
 	{
@@ -251,8 +268,6 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
 
     // Set attribute changes
     [clone setValue:[_changes copy] forKey:@"_changes"];
-
-    [clone commit];
     
     return clone;
 }
