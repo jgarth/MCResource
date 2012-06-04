@@ -1029,7 +1029,7 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
     var oldValue = [self valueForKey:key];
     
 	// Remember the PREVIOUS value if it's an attribute
-	if(![_changes objectForKey:key] && ((!oldValue && someValue) || (oldValue && oldValue !== someValue && ![oldValue isEqual:someValue])) && [[[self class] attributes] containsKey:key])
+	if(![_changes objectForKey:key] && ((!oldValue && someValue) || (oldValue !== nil && oldValue !== someValue && ![oldValue isEqual:someValue])) && [[[self class] attributes] containsKey:key])
     {
         if(oldValue === nil)
 	        oldValue = [CPNull null];

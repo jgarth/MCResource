@@ -88,7 +88,8 @@
 		
 		if(currentValue.isa && [currentValue isKindOfClass:[CPNull class]])
 		{
-		    currentValue = null;
+		    // FIX FOR SAFARI > 5.1.6, piece of shit browser
+		    currentValue = "";
 		}
 
 		// Recurse if neccessary
