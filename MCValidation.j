@@ -209,3 +209,31 @@ MCValidationOptionValidatesChildrenKey = "MCValidationOptionValidatesChildrenKey
 }
 
 @end
+
+@implementation MCUniquenessValidation : MCValidation
+{
+    CPString attributeName @accessors;
+    CPString className @accessors;
+}
+
++ (MCStringValidation)uniquenessValidationForClass:(Class)aClass attribute:(CPString)attribute
+{
+    var aValidation = [self new];
+    
+    [aValidation setAttributeName:attribute];
+    [aValidation setClassName:[aClass className]];
+    
+    return aValidation;
+}
+
+- (CPString)errorForValue:(CPString)string
+{
+    var otherResourcesAttributeValues = [[[MCResource allResourcesOfClass:className] allValues] valueForKey:attributeName];
+    
+    if([otherResourcesAttributeValues containsObject:string])
+        return @"ist bereits vergeben";
+        
+    return nil;
+}
+
+@end
