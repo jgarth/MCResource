@@ -904,6 +904,11 @@ var AllResourcesByTypeAndId = [CPDictionary dictionary];
     {
         return @"";
     }
+        
+    if([errors containsKey:@"errors"])
+    {
+    	errors = [errors objectForKey:@"errors"];
+    }
     
     var errorKeyEnumerator = [errors keyEnumerator],
         errorKey,
